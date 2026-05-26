@@ -183,6 +183,87 @@
       background: transparent;
       cursor: pointer;
     }
+    dialog.modal {
+      border: 1px solid var(--border);
+      background: var(--bg-elev);
+      color: var(--fg);
+      border-radius: var(--radius);
+      padding: 0;
+      max-width: 92vw;
+      width: 420px;
+    }
+    dialog.modal::backdrop {
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(4px);
+    }
+    dialog.modal .modal-body {
+      padding: 20px 22px 18px;
+    }
+    dialog.modal h2 {
+      margin: 0 0 14px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--fg-dim);
+    }
+    dialog.modal label {
+      display: block;
+      font-size: 12px;
+      color: var(--fg-dim);
+      margin: 12px 0 6px;
+    }
+    dialog.modal input[type=text],
+    dialog.modal input[type=url] {
+      width: 100%;
+      padding: 12px 12px;
+      font-size: 16px;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+    }
+    dialog.modal input:focus { border-color: var(--accent-live); }
+    dialog.modal .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+      justify-content: flex-end;
+    }
+    dialog.modal button {
+      font-size: 14px;
+      padding: 12px 18px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-tile);
+      color: var(--fg);
+      cursor: pointer;
+      min-width: 88px;
+    }
+    dialog.modal button.primary {
+      background: var(--accent-live);
+      color: #062512;
+      border-color: var(--accent-live);
+      font-weight: 600;
+    }
+    dialog.modal .error {
+      margin-top: 10px;
+      color: #ff8a7a;
+      font-size: 13px;
+      min-height: 1em;
+    }
+    dialog.modal .options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 6px;
+    }
+    dialog.modal .options button {
+      padding: 16px 12px;
+      font-size: 15px;
+      min-width: 0;
+    }
   </style>
 </head>
 <body>
@@ -194,6 +275,21 @@
     <iframe allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
     <div class="tap-catcher" id="tapCatcher" aria-label="Exit player"></div>
   </section>
+  <dialog id="addModal" class="modal">
+    <form method="dialog" class="modal-body" id="addForm">
+      <h2>Add a stream</h2>
+      <label for="addUrl">URL</label>
+      <input id="addUrl" type="url" inputmode="url" autocomplete="off"
+             placeholder="https://www.youtube.com/watch?v=…" required>
+      <label for="addName">Name (optional)</label>
+      <input id="addName" type="text" autocomplete="off" placeholder="e.g. Cornell FeederWatch">
+      <div class="error" id="addError"></div>
+      <div class="actions">
+        <button type="button" value="cancel" id="addCancel">Cancel</button>
+        <button type="submit" class="primary">Add</button>
+      </div>
+    </form>
+  </dialog>
   <script src="config.local.js" onerror="void 0"></script>
   <script>
     'use strict';
@@ -370,6 +466,93 @@
       '<polyline points="30,8 34,12 30,16"/>' +
       '<polyline points="30,24 34,28 30,32"/>';
 
+    // ---- URL parsing -----------------------------------------------------
+    function parseStreamUrl(raw) {
+      const trimmed = (raw || '').trim();
+      if (!trimmed) return null;
+
+      let u;
+      try { u = new URL(trimmed); }
+      catch { return { platform: 'iframe', url: trimmed }; }
+
+      const host = u.hostname.replace(/^www\./, '').toLowerCase();
+      const segs = u.pathname.split('/').filter(Boolean);
+
+      // YouTube variants
+      if (host === 'youtube.com' || host.endsWith('.youtube.com')) {
+        const v = u.searchParams.get('v');
+        if (v) return { platform: 'youtube', videoId: v };
+        if (segs[0] === 'embed' && segs[1]) return { platform: 'youtube', videoId: segs[1] };
+        if (segs[0] === 'live' && segs[1]) return { platform: 'youtube', videoId: segs[1] };
+        if (segs[0] === 'shorts' && segs[1]) return { platform: 'youtube', videoId: segs[1] };
+      }
+      if (host === 'youtu.be' && segs[0]) {
+        return { platform: 'youtube', videoId: segs[0] };
+      }
+
+      // Twitch variants
+      if (host === 'twitch.tv' || host.endsWith('.twitch.tv')) {
+        if (segs[0] === 'videos' && segs[1]) return { platform: 'twitch', videoId: segs[1] };
+        if (segs[0]) return { platform: 'twitch', videoId: segs[0] };
+      }
+
+      return { platform: 'iframe', url: trimmed };
+    }
+
+    function makeStreamId(name, parsed) {
+      const base = (name || parsed.videoId || parsed.url || 'stream')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 40);
+      let id = base || 'stream';
+      let n = 1;
+      const taken = new Set(state.streams.map(s => s.id));
+      while (taken.has(id)) {
+        n += 1;
+        id = base + '-' + n;
+      }
+      return id;
+    }
+
+    function persistStreams() {
+      saveJson(LS_KEYS.streams, { version: 1, streams: state.streams });
+    }
+
+    async function addStream({ url, name }) {
+      const parsed = parseStreamUrl(url);
+      if (!parsed) throw new Error('Please enter a URL.');
+      const stream = {
+        id: makeStreamId(name, parsed),
+        name: (name && name.trim()) || (parsed.videoId ? 'Stream ' + parsed.videoId : 'Stream'),
+        platform: parsed.platform,
+      };
+      if (parsed.videoId) stream.videoId = parsed.videoId;
+      if (parsed.url) stream.url = parsed.url;
+      state.streams.push(stream);
+      persistStreams();
+      render();
+      // Re-classify (just the new one needs it, but classifyAll skips fresh entries).
+      try { await classifyAll(); } catch (e) { console.warn('[wwob] classify after add failed', e); }
+      return stream;
+    }
+
+    function openAddModal() {
+      const dlg = document.getElementById('addModal');
+      document.getElementById('addUrl').value = '';
+      document.getElementById('addName').value = '';
+      document.getElementById('addError').textContent = '';
+      if (typeof dlg.showModal === 'function') dlg.showModal();
+      else dlg.setAttribute('open', '');
+      setTimeout(() => document.getElementById('addUrl').focus(), 0);
+    }
+
+    function closeAddModal() {
+      const dlg = document.getElementById('addModal');
+      if (typeof dlg.close === 'function') dlg.close();
+      else dlg.removeAttribute('open');
+    }
+
     // ---- Playback --------------------------------------------------------
     function embedUrl(stream) {
       if (stream.platform === 'youtube') {
@@ -539,7 +722,7 @@
         const tile = ev.target.closest('.tile');
         if (!tile) return;
         if (tile.dataset.action === 'add') {
-          // Wired in commit 5.
+          openAddModal();
           return;
         }
         if (tile.dataset.action === 'shuffle') {
@@ -552,6 +735,22 @@
       });
 
       document.getElementById('tapCatcher').addEventListener('click', closePlayer);
+
+      const addForm = document.getElementById('addForm');
+      addForm.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const url = document.getElementById('addUrl').value;
+        const name = document.getElementById('addName').value;
+        const errEl = document.getElementById('addError');
+        errEl.textContent = '';
+        try {
+          await addStream({ url, name });
+          closeAddModal();
+        } catch (e) {
+          errEl.textContent = e.message || String(e);
+        }
+      });
+      document.getElementById('addCancel').addEventListener('click', closeAddModal);
     }
 
     async function init() {
