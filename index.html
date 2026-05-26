@@ -29,19 +29,45 @@
       overscroll-behavior: none;
     }
     #titlebar {
-      padding: 12px 20px;
-      border-bottom: 1px solid var(--border);
+      padding: 22px 24px 18px;
     }
     #titlebar h1 {
       margin: 0;
-      font-size: 13px;
-      font-weight: 500;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--fg-dim);
+      font-family: "Hoefler Text", "Iowan Old Style", "Palatino", "Georgia", serif;
+      font-style: italic;
+      font-weight: 600;
+      font-size: clamp(28px, 4vw, 40px);
+      letter-spacing: 0.005em;
+      line-height: 1.1;
+      background: linear-gradient(110deg,
+        #0d6e3a 0%,
+        #3ad06a 18%,
+        #7fffb2 32%,
+        #d8fff0 42%,
+        #50e3c2 55%,
+        #2bbf9b 70%,
+        #0f7a5c 88%,
+        #0d6e3a 100%);
+      background-size: 220% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+      filter:
+        drop-shadow(0 0 14px rgba(58, 208, 106, 0.32))
+        drop-shadow(0 0 28px rgba(80, 227, 194, 0.18))
+        drop-shadow(0 2px 6px rgba(0, 0, 0, 0.65));
+      animation: shimmer 9s ease-in-out infinite;
+    }
+    @keyframes shimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50%      { background-position: 100% 50%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #titlebar h1 { animation: none; }
     }
     main {
-      padding: 16px;
+      padding: 8px 16px 140px;
     }
     .status {
       color: var(--fg-dim);
@@ -145,8 +171,8 @@
       color: var(--fg);
     }
     .tile.action svg {
-      width: 38px;
-      height: 38px;
+      width: 30px;
+      height: 30px;
       stroke: var(--fg);
       stroke-width: 1.6;
       fill: none;
@@ -154,10 +180,33 @@
       stroke-linejoin: round;
     }
     .tile.action .label {
-      font-size: 12px;
+      font-size: 11px;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--fg-dim);
+    }
+    #actionDock {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      z-index: 50;
+      display: flex;
+      gap: 10px;
+    }
+    #actionDock .tile.action {
+      width: 108px;
+      height: 108px;
+      aspect-ratio: auto;
+      background: rgba(29, 34, 42, 0.92);
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    @media (max-width: 540px) {
+      #actionDock { bottom: 12px; right: 12px; gap: 8px; }
+      #actionDock .tile.action { width: 92px; height: 92px; }
+      #actionDock .tile.action svg { width: 26px; height: 26px; }
     }
     @media (max-width: 540px) {
       .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
@@ -271,6 +320,7 @@
   <main id="dashboard">
     <p class="status">Loading…</p>
   </main>
+  <div id="actionDock"></div>
   <section id="player" hidden>
     <iframe allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
     <div class="tap-catcher" id="tapCatcher" aria-label="Exit player"></div>
@@ -571,8 +621,12 @@
     // ---- Playback --------------------------------------------------------
     function embedUrl(stream) {
       if (stream.platform === 'youtube') {
+        // enablejsapi=1 + origin let us postMessage play/mute commands after
+        // the iframe loads, which is the only reliable autoplay path on
+        // current YouTube embeds.
         return 'https://www.youtube.com/embed/' + stream.videoId +
-          '?autoplay=1&mute=1&controls=0&rel=0&playsinline=1';
+          '?autoplay=1&mute=1&controls=0&rel=0&playsinline=1' +
+          '&enablejsapi=1&origin=' + encodeURIComponent(location.origin);
       }
       if (stream.platform === 'twitch') {
         return 'https://player.twitch.tv/?channel=' + encodeURIComponent(stream.videoId) +
@@ -582,12 +636,37 @@
       return stream.url;
     }
 
+    function postYouTubeCommand(frame, func) {
+      try {
+        frame.contentWindow.postMessage(
+          JSON.stringify({ event: 'command', func, args: [] }),
+          'https://www.youtube.com'
+        );
+      } catch (e) {
+        console.warn('[wwob] yt postMessage failed', e);
+      }
+    }
+
     function openPlayer(stream) {
       const player = document.getElementById('player');
       const frame = player.querySelector('iframe');
-      frame.src = embedUrl(stream);
+      // Unhide before setting src — some browsers won't start media on an
+      // iframe whose ancestor is display:none at load time.
       player.hidden = false;
       state.view = 'player';
+      frame.src = embedUrl(stream);
+
+      if (stream.platform === 'youtube') {
+        // Force-start playback after the iframe finishes loading. Sending
+        // mute first satisfies the autoplay-with-sound restriction.
+        frame.addEventListener('load', function onLoad() {
+          frame.removeEventListener('load', onLoad);
+          setTimeout(() => {
+            postYouTubeCommand(frame, 'mute');
+            postYouTubeCommand(frame, 'playVideo');
+          }, 250);
+        });
+      }
     }
 
     function closePlayer() {
@@ -658,13 +737,16 @@
 
     function render() {
       const dash = document.getElementById('dashboard');
+      const dock = document.getElementById('actionDock');
       const grid = document.createElement('div');
       grid.className = 'grid';
-      grid.appendChild(actionTileEl('add', 'Add stream', ICON_PLUS));
-      grid.appendChild(actionTileEl('shuffle', 'Shuffle', ICON_SHUFFLE));
       const sorted = sortStreams(state.streams);
       for (const s of sorted) grid.appendChild(tileEl(s));
       dash.replaceChildren(grid);
+      dock.replaceChildren(
+        actionTileEl('add', 'Add', ICON_PLUS),
+        actionTileEl('shuffle', 'Shuffle', ICON_SHUFFLE),
+      );
     }
 
     // ---- Liveness detection ---------------------------------------------
@@ -769,16 +851,41 @@
     }
 
     // ---- Bootstrap -------------------------------------------------------
-    async function loadStreams() {
-      const cached = loadJson(LS_KEYS.streams);
-      if (cached && Array.isArray(cached.streams) && cached.streams.length > 0) {
-        return cached.streams;
-      }
-      const res = await fetch('streams.json');
+    async function fetchSeedStreams() {
+      const res = await fetch('streams.json', { cache: 'no-cache' });
       if (!res.ok) throw new Error('streams.json fetch failed: ' + res.status);
       const data = await res.json();
-      saveJson(LS_KEYS.streams, { version: data.version || 1, streams: data.streams });
+      if (!Array.isArray(data.streams)) throw new Error('streams.json: missing streams[]');
       return data.streams;
+    }
+
+    async function loadStreams() {
+      const cached = loadJson(LS_KEYS.streams);
+      const cachedList = (cached && Array.isArray(cached.streams)) ? cached.streams : [];
+
+      // First load: no cache yet -> seed from streams.json.
+      if (cachedList.length === 0) {
+        const seeds = await fetchSeedStreams();
+        saveJson(LS_KEYS.streams, { version: 1, streams: seeds });
+        return seeds;
+      }
+
+      // Subsequent loads: try to merge any newly-shipped seed entries whose
+      // id isn't already in the cache. Preserves user-added streams and any
+      // user reordering; new seeds get appended at the end. If the fetch
+      // fails (offline / 404), just use the cached list.
+      let seeds;
+      try { seeds = await fetchSeedStreams(); }
+      catch (e) { console.warn('[wwob] seed fetch failed, using cache only', e); return cachedList; }
+
+      const haveIds = new Set(cachedList.map(s => s.id));
+      const added = seeds.filter(s => !haveIds.has(s.id));
+      if (added.length === 0) return cachedList;
+
+      const merged = cachedList.concat(added);
+      saveJson(LS_KEYS.streams, { version: 1, streams: merged });
+      console.log('[wwob] merged', added.length, 'new seed stream(s):', added.map(s => s.id));
+      return merged;
     }
 
     // ---- Event delegation -----------------------------------------------
@@ -787,7 +894,7 @@
     }
 
     function wireEvents() {
-      document.getElementById('dashboard').addEventListener('click', (ev) => {
+      function handleTileClick(ev) {
         const tile = ev.target.closest('.tile');
         if (!tile) return;
         if (tile.dataset.action === 'add') {
@@ -801,7 +908,9 @@
         const id = tile.dataset.streamId;
         const stream = streamById(id);
         if (stream) openPlayer(stream);
-      });
+      }
+      document.getElementById('dashboard').addEventListener('click', handleTileClick);
+      document.getElementById('actionDock').addEventListener('click', handleTileClick);
 
       document.getElementById('tapCatcher').addEventListener('click', closePlayer);
 
