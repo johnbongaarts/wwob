@@ -357,6 +357,107 @@
       dash.replaceChildren(grid);
     }
 
+    // ---- Liveness detection ---------------------------------------------
+    function isCacheFresh(entry) {
+      if (!entry?.checkedAt) return false;
+      const ageMs = Date.now() - new Date(entry.checkedAt).getTime();
+      return ageMs < CONFIG.livenessCacheMinutes * 60 * 1000;
+    }
+
+    function classifyByActiveMonths(stream) {
+      if (!Array.isArray(stream.activeMonths) || stream.activeMonths.length === 0) {
+        return { status: 'unknown', reason: null };
+      }
+      const month = new Date().getMonth() + 1; // 1-indexed
+      if (stream.activeMonths.includes(month)) {
+        return { status: 'unknown', reason: null };
+      }
+      return { status: 'offline', reason: 'off-season' };
+    }
+
+    function chunk(arr, n) {
+      const out = [];
+      for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
+      return out;
+    }
+
+    async function classifyYouTubeBatch(videoIds) {
+      // One Data API call covers up to 50 ids. Returns map: videoId -> status.
+      const out = {};
+      if (!CONFIG.youtubeApiKey || videoIds.length === 0) return null;
+      try {
+        for (const batch of chunk(videoIds, 50)) {
+          const url = 'https://www.googleapis.com/youtube/v3/videos' +
+            '?part=snippet&id=' + batch.join(',') +
+            '&key=' + encodeURIComponent(CONFIG.youtubeApiKey);
+          const res = await fetch(url);
+          if (!res.ok) {
+            console.warn('[wwob] youtube api failed', res.status, await res.text());
+            return null;
+          }
+          const data = await res.json();
+          const seen = new Set();
+          for (const item of (data.items || [])) {
+            seen.add(item.id);
+            const lbc = item.snippet?.liveBroadcastContent;
+            if (lbc === 'live') out[item.id] = 'live';
+            else if (lbc === 'upcoming') out[item.id] = 'upcoming';
+            else out[item.id] = 'offline'; // 'none' = video exists but not live
+          }
+          // Missing ids (deleted / private) → offline.
+          for (const id of batch) if (!seen.has(id)) out[id] = 'offline';
+        }
+        return out;
+      } catch (e) {
+        console.warn('[wwob] youtube api error', e);
+        return null;
+      }
+    }
+
+    async function classifyAll({ force = false } = {}) {
+      const now = new Date().toISOString();
+      const next = { ...state.liveness };
+
+      // Partition streams that need a check.
+      const stale = state.streams.filter(s => force || !isCacheFresh(next[streamKey(s)]));
+      if (stale.length === 0) return;
+
+      const youtubeIds = stale
+        .filter(s => s.platform === 'youtube' && s.videoId)
+        .map(s => s.videoId);
+
+      let ytResults = null;
+      if (youtubeIds.length > 0) {
+        ytResults = await classifyYouTubeBatch(youtubeIds);
+      }
+
+      for (const s of stale) {
+        const key = streamKey(s);
+        let status = 'unknown';
+        let reason = null;
+
+        if (s.platform === 'youtube' && ytResults && ytResults[s.videoId] !== undefined) {
+          status = ytResults[s.videoId];
+        } else {
+          // No API result available: fall back to activeMonths heuristic.
+          const fallback = classifyByActiveMonths(s);
+          status = fallback.status;
+          reason = fallback.reason;
+        }
+        next[key] = { status, reason, checkedAt: now };
+      }
+
+      state.liveness = next;
+      saveJson(LS_KEYS.liveness, next);
+      render();
+    }
+
+    function scheduleRefresh() {
+      const ms = CONFIG.refreshIntervalMinutes * 60 * 1000;
+      setInterval(() => classifyAll({ force: true }).catch(e => console.warn('[wwob] refresh failed', e)),
+        ms);
+    }
+
     // ---- Bootstrap -------------------------------------------------------
     async function loadStreams() {
       const cached = loadJson(LS_KEYS.streams);
@@ -377,6 +478,9 @@
         state.liveness = loadJson(LS_KEYS.liveness) || {};
         render();
         console.log('[wwob] streams loaded', state.streams.length);
+        // Kick off liveness in background; don't block first render.
+        classifyAll().catch(e => console.warn('[wwob] classifyAll failed', e));
+        scheduleRefresh();
       } catch (e) {
         console.error('[wwob] init failed', e);
         dash.innerHTML = '<p class="status">Could not load streams: ' + e.message + '</p>';
