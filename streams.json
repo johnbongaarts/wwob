@@ -182,6 +182,116 @@
       "url": "https://explore.org/livecams/birds/great-horned-owl-cam",
       "source": "Explore.org",
       "activeMonths": [2, 3, 4, 5, 6]
+    },
+    {
+      "id": "bermuda-cahow",
+      "name": "Bermuda Cahow (Burrow 1)",
+      "description": "Nonsuch Island, Bermuda — underground burrow cam of the critically endangered Bermuda Petrel, once thought extinct for 300 years.",
+      "platform": "youtube",
+      "videoId": "kub-3zCd_JE",
+      "source": "Cornell Lab + Nonsuch Expeditions",
+      "activeMonths": [10, 11, 12, 1, 2, 3, 4, 5, 6]
+    },
+    {
+      "id": "loch-garten-osprey",
+      "name": "Loch Garten Ospreys",
+      "description": "Abernethy Forest, Scottish Highlands — the original RSPB osprey nest where UK ospreys recolonised in 1954.",
+      "platform": "youtube",
+      "videoId": "VDXNDR1SjsQ",
+      "source": "RSPB",
+      "activeMonths": [3, 4, 5, 6, 7, 8]
+    },
+    {
+      "id": "loch-of-the-lowes-osprey",
+      "name": "Loch of the Lowes Ospreys",
+      "description": "Perthshire, Scotland — Scottish Wildlife Trust's long-running osprey nest cam, currently with returning female NC0.",
+      "platform": "youtube",
+      "videoId": "bAjL5IBLads",
+      "source": "Scottish Wildlife Trust",
+      "activeMonths": [3, 4, 5, 6, 7, 8]
+    },
+    {
+      "id": "estonia-white-tailed-eagle",
+      "name": "Estonian White-tailed Eagle",
+      "description": "Matsalu National Park, Estonia — Eagle Club's long-running merikotkas nest, active every year since 1996.",
+      "platform": "youtube",
+      "videoId": "9r0luregAMY",
+      "source": "Kotkaklubi (Eagle Club Estonia)",
+      "activeMonths": [2, 3, 4, 5, 6, 7, 8]
+    },
+    {
+      "id": "estonia-golden-eagle",
+      "name": "Estonian Golden Eagle",
+      "description": "Northern Estonia — Eagle Club's kaljukotkas (golden eagle) nest in a remote boreal forest.",
+      "platform": "youtube",
+      "videoId": "sUgPNTb_lpQ",
+      "source": "Kotkaklubi (Eagle Club Estonia)",
+      "activeMonths": [3, 4, 5, 6, 7, 8]
+    },
+    {
+      "id": "sydney-sea-eagles",
+      "name": "Sydney Sea-Eagles",
+      "description": "Newington Armory, Sydney Olympic Park — White-bellied Sea-Eagle nest 50ft up a eucalyptus, run by BirdLife Australia.",
+      "platform": "youtube",
+      "videoId": "62GAQuguPM0",
+      "source": "BirdLife Australia / Sea-EagleCAM"
+    },
+    {
+      "id": "australian-bird-cams-wollongong",
+      "name": "Australian Bird Cams (Wollongong)",
+      "description": "Wollongong, NSW — backyard cam streaming wild galahs, cockatoos, lorikeets and possums on the NSW south coast.",
+      "platform": "youtube",
+      "videoId": "PTtOc1XR6Fk",
+      "source": "Australian Bird Cams"
+    },
+    {
+      "id": "kakapo-rakiura",
+      "name": "Kakapo Cam (Rakiura)",
+      "description": "Whenua Hou / Codfish Island, New Zealand — underground burrow cam of Rakiura the kakapo, the world's heaviest parrot.",
+      "platform": "youtube",
+      "videoId": "LDSWtyU6-Lg",
+      "source": "NZ Dept. of Conservation",
+      "activeMonths": [1, 2, 3, 4, 5, 6, 7]
+    },
+    {
+      "id": "tembe-elephant-park",
+      "name": "Tembe Elephant Park",
+      "description": "KwaZulu-Natal, South Africa — Maputaland waterhole with 340+ bird species including vultures, hornbills, fish eagles.",
+      "platform": "youtube",
+      "videoId": "gdrNUUf-cQw",
+      "source": "Tembe Elephant Park"
+    },
+    {
+      "id": "wild-africa-live-tau",
+      "name": "Wild Africa Live (Tau Waterhole)",
+      "description": "Madikwe Game Reserve, South Africa — 24/7 Africam waterhole stream; over 300 bird species including the Tau vulture restaurant.",
+      "platform": "youtube",
+      "videoId": "ZwxMY_3XZ_A",
+      "source": "Africam"
+    },
+    {
+      "id": "fotherdale-barn-owls",
+      "name": "Fotherdale Barn Owls (Robert E Fuller)",
+      "description": "Yorkshire Wolds, UK — multi-cam view of wild barn owls, kestrels, stoats and tawny owls at wildlife artist Robert E Fuller's reserve.",
+      "platform": "youtube",
+      "videoId": "pSsKm7rkv20",
+      "source": "Robert E Fuller"
+    },
+    {
+      "id": "ash-wood-tawny-owls",
+      "name": "Ash Wood Tawny Owls (Robert E Fuller)",
+      "description": "Yorkshire, UK — wild tawny owls, kestrels and buzzards in an ancient woodland nest box network.",
+      "platform": "youtube",
+      "videoId": "z-lG3ro832c",
+      "source": "Robert E Fuller"
+    },
+    {
+      "id": "sachatamia-hummingbirds",
+      "name": "Sachatamia Hummingbirds (Ecuador)",
+      "description": "Mindo cloud forest, Pichincha, Ecuador — feeder station for one of the planet's richest hummingbird communities (130+ species).",
+      "platform": "youtube",
+      "videoId": "c3KfiiBTIvA",
+      "source": "Sachatamia Lodge"
     }
   ]
 }
