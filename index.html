@@ -275,6 +275,21 @@
     <iframe allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
     <div class="tap-catcher" id="tapCatcher" aria-label="Exit player"></div>
   </section>
+  <dialog id="shuffleModal" class="modal">
+    <div class="modal-body">
+      <h2>Shuffle interval</h2>
+      <div class="options" id="shuffleOptions">
+        <button type="button" data-minutes="1">1 min</button>
+        <button type="button" data-minutes="5">5 min</button>
+        <button type="button" data-minutes="15">15 min</button>
+        <button type="button" data-minutes="30">30 min</button>
+        <button type="button" data-minutes="60">60 min</button>
+      </div>
+      <div class="actions">
+        <button type="button" id="shuffleCancel">Cancel</button>
+      </div>
+    </div>
+  </dialog>
   <dialog id="addModal" class="modal">
     <form method="dialog" class="modal-body" id="addForm">
       <h2>Add a stream</h2>
@@ -316,7 +331,7 @@
       streams: [],
       liveness: {},
       view: 'dashboard',
-      shuffle: { active: false, intervalMs: 0, timerId: null, lastIndex: -1 },
+      shuffle: { active: false, intervalMs: 0, timerId: null, lastId: null },
     };
 
     // ---- Storage helpers -------------------------------------------------
@@ -584,8 +599,62 @@
       stopShuffle();
     }
 
-    // Placeholder so closePlayer() works before shuffle module is loaded.
-    function stopShuffle() {}
+    // ---- Shuffle ---------------------------------------------------------
+    function liveStreams() {
+      return state.streams.filter(s => statusFor(s) === 'live');
+    }
+
+    function pickShuffleStream() {
+      const pool = liveStreams();
+      if (pool.length === 0) return null;
+      if (pool.length === 1) return pool[0];
+      // Avoid an immediate repeat.
+      let next;
+      let tries = 0;
+      do {
+        next = pool[Math.floor(Math.random() * pool.length)];
+        tries += 1;
+      } while (next.id === state.shuffle.lastId && tries < 8);
+      state.shuffle.lastId = next.id;
+      return next;
+    }
+
+    function startShuffle(minutes) {
+      const first = pickShuffleStream();
+      if (!first) {
+        const errDlg = document.getElementById('shuffleModal');
+        // No live streams — bail with a console hint; modal stays open.
+        console.warn('[wwob] no live streams to shuffle');
+        return false;
+      }
+      state.shuffle.active = true;
+      state.shuffle.intervalMs = minutes * 60 * 1000;
+      openPlayer(first);
+      state.view = 'shuffle';
+      state.shuffle.timerId = setInterval(() => {
+        const s = pickShuffleStream();
+        if (s) openPlayer(s);
+      }, state.shuffle.intervalMs);
+      return true;
+    }
+
+    function stopShuffle() {
+      if (state.shuffle.timerId) clearInterval(state.shuffle.timerId);
+      state.shuffle.active = false;
+      state.shuffle.timerId = null;
+    }
+
+    function openShuffleModal() {
+      const dlg = document.getElementById('shuffleModal');
+      if (typeof dlg.showModal === 'function') dlg.showModal();
+      else dlg.setAttribute('open', '');
+    }
+
+    function closeShuffleModal() {
+      const dlg = document.getElementById('shuffleModal');
+      if (typeof dlg.close === 'function') dlg.close();
+      else dlg.removeAttribute('open');
+    }
 
     function render() {
       const dash = document.getElementById('dashboard');
@@ -726,7 +795,7 @@
           return;
         }
         if (tile.dataset.action === 'shuffle') {
-          // Wired in commit 6.
+          openShuffleModal();
           return;
         }
         const id = tile.dataset.streamId;
@@ -751,6 +820,14 @@
         }
       });
       document.getElementById('addCancel').addEventListener('click', closeAddModal);
+
+      document.getElementById('shuffleOptions').addEventListener('click', (ev) => {
+        const btn = ev.target.closest('button[data-minutes]');
+        if (!btn) return;
+        const minutes = parseInt(btn.dataset.minutes, 10);
+        if (startShuffle(minutes)) closeShuffleModal();
+      });
+      document.getElementById('shuffleCancel').addEventListener('click', closeShuffleModal);
     }
 
     async function init() {
