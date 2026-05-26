@@ -48,6 +48,121 @@
       font-size: 13px;
       margin: 0;
     }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .tile {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      background: var(--bg-tile);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      border: 1px solid var(--border);
+      transition: opacity 120ms ease, filter 120ms ease, transform 80ms ease;
+    }
+    .tile:active { transform: scale(0.98); }
+    .tile img.thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .tile .placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 12px;
+      font-size: 14px;
+      color: var(--fg-dim);
+      background: linear-gradient(135deg, #1a2028, #0e1216);
+    }
+    .tile .overlay {
+      position: absolute;
+      inset: auto 0 0 0;
+      padding: 10px 12px 12px;
+      background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.78) 60%, rgba(0,0,0,0.92) 100%);
+      pointer-events: none;
+    }
+    .tile .name {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.25;
+      color: var(--fg);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .tile .source {
+      margin-top: 2px;
+      font-size: 11px;
+      color: var(--fg-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tile .dot {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.45);
+    }
+    .tile .dot.live { background: var(--accent-live); box-shadow: 0 0 0 2px rgba(0,0,0,0.45), 0 0 10px var(--accent-live); }
+    .tile .dot.upcoming { background: var(--accent-upcoming); }
+    .tile .badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.6);
+      color: var(--fg-dim);
+      backdrop-filter: blur(4px);
+    }
+    .tile.offline { opacity: 0.4; filter: grayscale(0.6); }
+    .tile.upcoming .badge { color: var(--accent-upcoming); }
+    .tile.action {
+      background: var(--bg-elev);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 8px;
+      color: var(--fg);
+    }
+    .tile.action svg {
+      width: 38px;
+      height: 38px;
+      stroke: var(--fg);
+      stroke-width: 1.6;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .tile.action .label {
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--fg-dim);
+    }
+    @media (max-width: 540px) {
+      .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+      .tile .name { font-size: 13px; }
+    }
   </style>
 </head>
 <body>
@@ -103,6 +218,145 @@
       }
     }
 
+    // ---- Derived helpers -------------------------------------------------
+    function streamKey(stream) {
+      // Cache key: prefer videoId for youtube/twitch, fall back to stream.id.
+      return stream.videoId || stream.id;
+    }
+
+    function statusFor(stream) {
+      const cached = state.liveness[streamKey(stream)];
+      return cached?.status || 'unknown';
+    }
+
+    function offlineReasonFor(stream) {
+      const cached = state.liveness[streamKey(stream)];
+      return cached?.reason || null;
+    }
+
+    // ---- Rendering -------------------------------------------------------
+    const STATUS_RANK = { live: 0, upcoming: 1, unknown: 2, offline: 3 };
+
+    function sortStreams(list) {
+      // Stable sort by status bucket, preserving seed order within each bucket.
+      return list
+        .map((s, i) => ({ s, i, rank: STATUS_RANK[statusFor(s)] ?? 2 }))
+        .sort((a, b) => a.rank - b.rank || a.i - b.i)
+        .map(x => x.s);
+    }
+
+    function thumbnailUrl(stream) {
+      if (stream.platform === 'youtube') {
+        return 'https://img.youtube.com/vi/' + stream.videoId + '/maxresdefault.jpg';
+      }
+      if (stream.platform === 'twitch') {
+        const minute = Math.floor(Date.now() / 60000);
+        return 'https://static-cdn.jtvnw.net/previews-ttv/live_user_' +
+          stream.videoId + '-440x248.jpg?t=' + minute;
+      }
+      return null; // iframe: placeholder
+    }
+
+    function tileEl(stream) {
+      const status = statusFor(stream);
+      const reason = offlineReasonFor(stream);
+      const el = document.createElement('div');
+      el.className = 'tile';
+      el.classList.add(status);
+      el.dataset.streamId = stream.id;
+
+      const thumb = thumbnailUrl(stream);
+      if (thumb) {
+        const img = document.createElement('img');
+        img.className = 'thumb';
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        img.alt = stream.name;
+        img.src = thumb;
+        if (stream.platform === 'youtube') {
+          img.addEventListener('error', () => {
+            // maxres often missing — fall back to hqdefault once.
+            if (!img.dataset.fallback) {
+              img.dataset.fallback = '1';
+              img.src = 'https://img.youtube.com/vi/' + stream.videoId + '/hqdefault.jpg';
+            }
+          });
+        }
+        el.appendChild(img);
+      } else {
+        const ph = document.createElement('div');
+        ph.className = 'placeholder';
+        ph.textContent = stream.name;
+        el.appendChild(ph);
+      }
+
+      if (status === 'live') {
+        const dot = document.createElement('span');
+        dot.className = 'dot live';
+        dot.title = 'Live';
+        el.appendChild(dot);
+      } else if (status === 'upcoming') {
+        const dot = document.createElement('span');
+        dot.className = 'dot upcoming';
+        dot.title = 'Upcoming';
+        el.appendChild(dot);
+        const b = document.createElement('span');
+        b.className = 'badge';
+        b.textContent = 'Soon';
+        el.appendChild(b);
+      } else if (status === 'offline' && reason === 'off-season') {
+        const b = document.createElement('span');
+        b.className = 'badge';
+        b.textContent = 'Off-season';
+        el.appendChild(b);
+      }
+
+      const overlay = document.createElement('div');
+      overlay.className = 'overlay';
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = stream.name;
+      overlay.appendChild(name);
+      if (stream.source) {
+        const src = document.createElement('div');
+        src.className = 'source';
+        src.textContent = stream.source;
+        overlay.appendChild(src);
+      }
+      el.appendChild(overlay);
+
+      return el;
+    }
+
+    function actionTileEl(action, label, svgPath) {
+      const el = document.createElement('div');
+      el.className = 'tile action';
+      el.dataset.action = action;
+      el.innerHTML =
+        '<svg viewBox="0 0 40 40" aria-hidden="true">' + svgPath + '</svg>' +
+        '<div class="label">' + label + '</div>';
+      return el;
+    }
+
+    const ICON_PLUS = '<line x1="20" y1="10" x2="20" y2="30"/><line x1="10" y1="20" x2="30" y2="20"/>';
+    const ICON_SHUFFLE =
+      '<path d="M6 12 H14 L26 28 H34"/>' +
+      '<path d="M6 28 H14 L18 23"/>' +
+      '<path d="M22 17 L26 12 H34"/>' +
+      '<polyline points="30,8 34,12 30,16"/>' +
+      '<polyline points="30,24 34,28 30,32"/>';
+
+    function render() {
+      const dash = document.getElementById('dashboard');
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+      grid.appendChild(actionTileEl('add', 'Add stream', ICON_PLUS));
+      grid.appendChild(actionTileEl('shuffle', 'Shuffle', ICON_SHUFFLE));
+      const sorted = sortStreams(state.streams);
+      for (const s of sorted) grid.appendChild(tileEl(s));
+      dash.replaceChildren(grid);
+    }
+
     // ---- Bootstrap -------------------------------------------------------
     async function loadStreams() {
       const cached = loadJson(LS_KEYS.streams);
@@ -121,8 +375,8 @@
       try {
         state.streams = await loadStreams();
         state.liveness = loadJson(LS_KEYS.liveness) || {};
-        dash.innerHTML = '<p class="status">Loaded ' + state.streams.length + ' streams. Render next.</p>';
-        console.log('[wwob] streams loaded', state.streams);
+        render();
+        console.log('[wwob] streams loaded', state.streams.length);
       } catch (e) {
         console.error('[wwob] init failed', e);
         dash.innerHTML = '<p class="status">Could not load streams: ' + e.message + '</p>';
