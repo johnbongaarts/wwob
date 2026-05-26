@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Wedge's World of Birds</title>
+  <style>
+    :root {
+      --bg: #0a0d10;
+      --bg-tile: #161a1f;
+      --bg-elev: #1d222a;
+      --fg: #e8e8e8;
+      --fg-dim: #8a8f96;
+      --border: #232830;
+      --accent-live: #3ad06a;
+      --accent-upcoming: #f5c451;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      overscroll-behavior: none;
+    }
+    #titlebar {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    #titlebar h1 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--fg-dim);
+    }
+    main {
+      padding: 16px;
+    }
+    .status {
+      color: var(--fg-dim);
+      font-size: 13px;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <header id="titlebar"><h1>Wedge's World of Birds</h1></header>
+  <main id="dashboard">
+    <p class="status">Loading…</p>
+  </main>
+  <script src="config.local.js" onerror="void 0"></script>
+  <script>
+    'use strict';
+
+    // ---- Config ----------------------------------------------------------
+    // Defaults live here; secrets (API key) load from config.local.js below,
+    // which is gitignored. To enable YouTube liveness checks locally:
+    //   cp config.local.example.js config.local.js  (then paste your key)
+    const CONFIG = {
+      youtubeApiKey: null,
+      livenessCacheMinutes: 15,
+      refreshIntervalMinutes: 60,
+      twitchParent: location.hostname || 'localhost',
+    };
+    if (window.WWOB_CONFIG) Object.assign(CONFIG, window.WWOB_CONFIG);
+
+    const LS_KEYS = {
+      streams: 'wwob.streams.v1',
+      liveness: 'wwob.liveness.v1',
+    };
+
+    // ---- State -----------------------------------------------------------
+    const state = {
+      streams: [],
+      liveness: {},
+      view: 'dashboard',
+      shuffle: { active: false, intervalMs: 0, timerId: null, lastIndex: -1 },
+    };
+
+    // ---- Storage helpers -------------------------------------------------
+    function loadJson(key) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        console.warn('[wwob] localStorage read failed for', key, e);
+        return null;
+      }
+    }
+
+    function saveJson(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        console.warn('[wwob] localStorage write failed for', key, e);
+      }
+    }
+
+    // ---- Bootstrap -------------------------------------------------------
+    async function loadStreams() {
+      const cached = loadJson(LS_KEYS.streams);
+      if (cached && Array.isArray(cached.streams) && cached.streams.length > 0) {
+        return cached.streams;
+      }
+      const res = await fetch('streams.json');
+      if (!res.ok) throw new Error('streams.json fetch failed: ' + res.status);
+      const data = await res.json();
+      saveJson(LS_KEYS.streams, { version: data.version || 1, streams: data.streams });
+      return data.streams;
+    }
+
+    async function init() {
+      const dash = document.getElementById('dashboard');
+      try {
+        state.streams = await loadStreams();
+        state.liveness = loadJson(LS_KEYS.liveness) || {};
+        dash.innerHTML = '<p class="status">Loaded ' + state.streams.length + ' streams. Render next.</p>';
+        console.log('[wwob] streams loaded', state.streams);
+      } catch (e) {
+        console.error('[wwob] init failed', e);
+        dash.innerHTML = '<p class="status">Could not load streams: ' + e.message + '</p>';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+{
+  "version": 1,
+  "_comment": "Seed list for Bird Cam Streamer v0.1. activeMonths is a 1-indexed array hinting when each stream is typically live; it's a fallback for when no YouTube API key is configured. Omit the field for year-round streams. The YouTube Data API result (if available) always overrides this hint. If a stream stops loading, replace the videoId via the '+' tile.",
+  "streams": [
+    {
+      "id": "cornell-feederwatch",
+      "name": "Cornell FeederWatch",
+      "description": "Sapsucker Woods, Ithaca, NY — chickadees, cardinals, pileated woodpeckers at the Treman feeding garden.",
+      "platform": "youtube",
+      "videoId": "x10vL6_47Dw",
+      "source": "Cornell Lab of Ornithology"
+    },
+    {
+      "id": "panama-fruit-feeder",
+      "name": "Panama Fruit Feeder",
+      "description": "Canopy Lodge, El Valle de Antón — tanagers, oropendolas, toucans, 90+ species recorded.",
+      "platform": "youtube",
+      "videoId": "WtoxxHADnGk",
+      "source": "Cornell Lab + Canopy Lodge"
+    },
+    {
+      "id": "panama-hummingbird-feeder",
+      "name": "Panama Hummingbird Feeder",
+      "description": "Canopy Tower, Soberanía National Park, Panama — colorful tropical hummingbirds.",
+      "platform": "youtube",
+      "videoId": "0xFARCdZ3vA",
+      "source": "Cornell Lab + Canopy Tower"
+    },
+    {
+      "id": "big-bear-eagle-nest",
+      "name": "Big Bear Eagles (Nest)",
+      "description": "Jackie and Shadow's nest, 145 feet up a pine in the San Bernardino Mountains, California.",
+      "platform": "youtube",
+      "videoId": "B4-L2nfGcuE",
+      "source": "Friends of Big Bear Valley"
+    },
+    {
+      "id": "big-bear-eagle-wide",
+      "name": "Big Bear Eagles (Wide)",
+      "description": "Wider view of Jackie and Shadow's territory — great for arrivals, departures, and weather.",
+      "platform": "youtube",
+      "videoId": "41eq4VzCYc4",
+      "source": "Friends of Big Bear Valley"
+    },
+    {
+      "id": "west-end-catalina",
+      "name": "Catalina Bald Eagles",
+      "description": "West End of Catalina Island, California — eagle pair Haku and Makaio at a nest active since 1991.",
+      "platform": "youtube",
+      "videoId": "aT1adgYSfbc",
+      "source": "Institute for Wildlife Studies + Explore.org"
+    },
+    {
+      "id": "west-end-catalina-low",
+      "name": "Catalina Bald Eagles (Low)",
+      "description": "Low-angle cam at the West End Catalina nest.",
+      "platform": "youtube",
+      "videoId": "wfuqjSNXZ14",
+      "source": "Institute for Wildlife Studies + Explore.org"
+    },
+    {
+      "id": "cornell-red-tailed-hawks",
+      "name": "Cornell Red-tailed Hawks",
+      "description": "Big Red and Arthur's nest atop a light pole on Cornell's campus.",
+      "platform": "youtube",
+      "videoId": "afsaYKQ3vac",
+      "source": "Cornell Lab of Ornithology",
+      "activeMonths": [2, 3, 4, 5, 6, 7]
+    },
+    {
+      "id": "hellgate-ospreys",
+      "name": "Hellgate Ospreys",
+      "description": "Iris and her mates at the mouth of Hellgate Canyon, Missoula, Montana.",
+      "platform": "youtube",
+      "videoId": "-qvYCbvbeN8",
+      "source": "Cornell Lab + Montana Osprey Project",
+      "activeMonths": [4, 5, 6, 7, 8, 9]
+    },
+    {
+      "id": "royal-albatross",
+      "name": "Northern Royal Albatross",
+      "description": "Taiaroa Head, New Zealand — the only mainland albatross colony in the Southern Hemisphere.",
+      "platform": "youtube",
+      "videoId": "Mm_zVDDUeNA",
+      "source": "Cornell Lab + NZ Dept. of Conservation",
+      "activeMonths": [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    },
+    {
+      "id": "american-kestrel",
+      "name": "American Kestrel",
+      "description": "Wisconsin kestrel nest box — small but fierce North American falcon.",
+      "platform": "youtube",
+      "videoId": "BRNsaDSzpnk",
+      "source": "Cornell Lab + Raptor Resource Project",
+      "activeMonths": [4, 5, 6, 7]
+    },
+    {
+      "id": "cornell-barred-owls",
+      "name": "Wild Birds Unlimited Barred Owls",
+      "description": "Backyard barred owl nest box near Indianapolis, Indiana.",
+      "platform": "youtube",
+      "videoId": "xH1kKvE2w-0",
+      "source": "Cornell Lab + Wild Birds Unlimited",
+      "activeMonths": [3, 4, 5, 6, 7]
+    },
+    {
+      "id": "lance-tailed-manakins",
+      "name": "Lance-tailed Manakins",
+      "description": "Isla Boca Brava, Panama — male manakins performing cooperative courtship dances on a lek perch.",
+      "platform": "youtube",
+      "videoId": "6Z_ADE6jfXs",
+      "source": "Cornell Lab + FSU/DuVal Lab",
+      "activeMonths": [1, 2, 3, 4, 5]
+    },
+    {
+      "id": "wildflower-great-horned-owls",
+      "name": "Great Horned Owls (Athena)",
+      "description": "Lady Bird Johnson Wildflower Center, Austin, TX — Athena nests in a sotol planter above the courtyard.",
+      "platform": "youtube",
+      "videoId": "yXF0lEPh97g",
+      "source": "Cornell Lab + Wildflower Center",
+      "activeMonths": [2, 3, 4, 5, 6]
+    },
+    {
+      "id": "berry-college-eagles",
+      "name": "Berry College Eagles",
+      "description": "Bald eagle nest in a tall pine at Berry College, Mount Berry, Georgia.",
+      "platform": "youtube",
+      "videoId": "ySI23X3H8ok",
+      "source": "Berry College",
+      "activeMonths": [12, 1, 2, 3, 4, 5]
+    },
+    {
+      "id": "panama-fruit-feeder-explore",
+      "name": "Panama Fruit Feeder (Explore)",
+      "description": "Alternate stream of the Canopy Lodge fruit feeder via Explore.org.",
+      "platform": "iframe",
+      "url": "https://explore.org/livecams/currently-live/panama-fruit-feeder",
+      "source": "Explore.org"
+    },
+    {
+      "id": "audubon-osprey-hog-island",
+      "name": "Hog Island Ospreys",
+      "description": "Maine osprey nest on Audubon's Hog Island — chick rearing and fishing dives.",
+      "platform": "iframe",
+      "url": "https://explore.org/livecams/ospreys/osprey-nest",
+      "source": "Audubon + Explore.org",
+      "activeMonths": [4, 5, 6, 7, 8, 9]
+    },
+    {
+      "id": "audubon-puffin-loafing-ledge",
+      "name": "Atlantic Puffins (Seal Island)",
+      "description": "Seal Island, Maine — Atlantic puffins on the 'loafing ledge' where the colony gathers.",
+      "platform": "iframe",
+      "url": "https://explore.org/livecams/puffins/puffin-loafing-ledge",
+      "source": "Audubon Seabird Institute + Explore.org",
+      "activeMonths": [5, 6, 7, 8]
+    },
+    {
+      "id": "decorah-eagles",
+      "name": "Decorah Eagles",
+      "description": "Iconic bald eagle nest near the Decorah fish hatchery, Iowa.",
+      "platform": "iframe",
+      "url": "https://explore.org/livecams/raptor-resource-project/decorah-eagles",
+      "source": "Raptor Resource Project + Explore.org",
+      "activeMonths": [12, 1, 2, 3, 4, 5, 6]
+    },
+    {
+      "id": "decorah-north-eagles",
+      "name": "Decorah North Eagles",
+      "description": "Decorah North nest, also in Iowa — second long-running Raptor Resource Project eagle cam.",
+      "platform": "iframe",
+      "url": "https://explore.org/livecams/raptor-resource-project/decorah-eagles-north-nest",
+      "source": "Raptor Resource Project + Explore.org",
+      "activeMonths": [12, 1, 2, 3, 4, 5, 6]
+    },
+    {
+      "id": "great-horned-owl-montana",
+      "name": "Great Horned Owl (Montana)",
+      "description": "Wild Great Horned Owl nest in Montana via Explore.org's nature network.",
+      "platform": "iframe",
+      "url": "https://explore.org/livecams/birds/great-horned-owl-cam",
+      "source": "Explore.org",
+      "activeMonths": [2, 3, 4, 5, 6]
+    }
+  ]
+}
