@@ -163,6 +163,26 @@
       .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
       .tile .name { font-size: 13px; }
     }
+    #player {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 100;
+    }
+    #player[hidden] { display: none; }
+    #player iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+    /* Transparent click-catcher over the iframe so taps exit playback. */
+    #player .tap-catcher {
+      position: absolute;
+      inset: 0;
+      background: transparent;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -170,6 +190,10 @@
   <main id="dashboard">
     <p class="status">Loading…</p>
   </main>
+  <section id="player" hidden>
+    <iframe allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+    <div class="tap-catcher" id="tapCatcher" aria-label="Exit player"></div>
+  </section>
   <script src="config.local.js" onerror="void 0"></script>
   <script>
     'use strict';
@@ -346,6 +370,40 @@
       '<polyline points="30,8 34,12 30,16"/>' +
       '<polyline points="30,24 34,28 30,32"/>';
 
+    // ---- Playback --------------------------------------------------------
+    function embedUrl(stream) {
+      if (stream.platform === 'youtube') {
+        return 'https://www.youtube.com/embed/' + stream.videoId +
+          '?autoplay=1&mute=1&controls=0&rel=0&playsinline=1';
+      }
+      if (stream.platform === 'twitch') {
+        return 'https://player.twitch.tv/?channel=' + encodeURIComponent(stream.videoId) +
+          '&parent=' + encodeURIComponent(CONFIG.twitchParent) +
+          '&autoplay=true&muted=true';
+      }
+      return stream.url;
+    }
+
+    function openPlayer(stream) {
+      const player = document.getElementById('player');
+      const frame = player.querySelector('iframe');
+      frame.src = embedUrl(stream);
+      player.hidden = false;
+      state.view = 'player';
+    }
+
+    function closePlayer() {
+      const player = document.getElementById('player');
+      const frame = player.querySelector('iframe');
+      frame.src = 'about:blank';
+      player.hidden = true;
+      state.view = 'dashboard';
+      stopShuffle();
+    }
+
+    // Placeholder so closePlayer() works before shuffle module is loaded.
+    function stopShuffle() {}
+
     function render() {
       const dash = document.getElementById('dashboard');
       const grid = document.createElement('div');
@@ -471,12 +529,38 @@
       return data.streams;
     }
 
+    // ---- Event delegation -----------------------------------------------
+    function streamById(id) {
+      return state.streams.find(s => s.id === id);
+    }
+
+    function wireEvents() {
+      document.getElementById('dashboard').addEventListener('click', (ev) => {
+        const tile = ev.target.closest('.tile');
+        if (!tile) return;
+        if (tile.dataset.action === 'add') {
+          // Wired in commit 5.
+          return;
+        }
+        if (tile.dataset.action === 'shuffle') {
+          // Wired in commit 6.
+          return;
+        }
+        const id = tile.dataset.streamId;
+        const stream = streamById(id);
+        if (stream) openPlayer(stream);
+      });
+
+      document.getElementById('tapCatcher').addEventListener('click', closePlayer);
+    }
+
     async function init() {
       const dash = document.getElementById('dashboard');
       try {
         state.streams = await loadStreams();
         state.liveness = loadJson(LS_KEYS.liveness) || {};
         render();
+        wireEvents();
         console.log('[wwob] streams loaded', state.streams.length);
         // Kick off liveness in background; don't block first render.
         classifyAll().catch(e => console.warn('[wwob] classifyAll failed', e));
