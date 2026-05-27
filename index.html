@@ -374,6 +374,7 @@
     const LS_KEYS = {
       streams: 'wwob.streams.v1',
       liveness: 'wwob.liveness.v1',
+      seedIds: 'wwob.seedIds.v1',
     };
 
     // ---- State -----------------------------------------------------------
@@ -867,35 +868,42 @@
       if (cachedList.length === 0) {
         const seeds = await fetchSeedStreams();
         saveJson(LS_KEYS.streams, { version: 1, streams: seeds });
+        saveJson(LS_KEYS.seedIds, seeds.map(s => s.id));
         return seeds;
       }
 
       // Subsequent loads: reconcile the cached list with the latest seeds.
-      //   - User-added streams (id not in seeds): preserved as-is.
+      //   - User-added (id not in lastSeen): preserved as-is.
       //   - Seeds new since last load (id not in cache): appended.
-      //   - Seeds whose fields shifted (e.g. rotated videoId): the cached
-      //     entry's seed-managed fields are refreshed in place.
+      //   - Seeds whose fields shifted: refreshed in place.
+      //   - Seeds removed from streams.json (id in lastSeen, not in current):
+      //     dropped from cache, so the dashboard stops showing stale tiles.
       // If the seed fetch fails, fall back to the cache untouched.
       let seeds;
       try { seeds = await fetchSeedStreams(); }
       catch (e) { console.warn('[wwob] seed fetch failed, using cache only', e); return cachedList; }
 
-      const seedById = new Map(seeds.map(s => [s.id, s]));
-      const cachedIds = new Set(cachedList.map(s => s.id));
+      // lastSeen is the set of ids that were seeds the last time we ran.
+      // On first run with this code, the file doesn't exist yet — assume
+      // every cached entry was originally a seed (the v0.1 cache only ever
+      // contained seeds, since this predates any persistent user-add flow).
+      let lastSeen = loadJson(LS_KEYS.seedIds);
+      if (!Array.isArray(lastSeen)) lastSeen = cachedList.map(s => s.id);
+      const wasSeed = new Set(lastSeen);
 
-      // Fields that come from streams.json. Anything else on a cached
-      // entry (transient runtime data, future user customizations) is left
-      // alone.
+      const seedById = new Map(seeds.map(s => [s.id, s]));
       const SEED_FIELDS = ['name', 'description', 'platform', 'videoId', 'url', 'source', 'activeMonths'];
 
-      let updated = 0;
-      const merged = cachedList.map(c => {
+      let updated = 0, removed = 0, added = 0;
+      const reconciled = [];
+      for (const c of cachedList) {
         const seed = seedById.get(c.id);
-        if (!seed) return c; // user-added or no longer in seeds
+        if (wasSeed.has(c.id) && !seed) { removed += 1; continue; }
+        if (!seed) { reconciled.push(c); continue; } // user-added
+        // Update seed-managed fields in place.
         const next = { ...c };
         let changed = false;
         for (const f of SEED_FIELDS) {
-          // Treat missing on seed side as "remove this field".
           if (seed[f] === undefined) {
             if (next[f] !== undefined) { delete next[f]; changed = true; }
           } else if (JSON.stringify(next[f]) !== JSON.stringify(seed[f])) {
@@ -904,18 +912,20 @@
           }
         }
         if (changed) updated += 1;
-        return next;
-      });
+        reconciled.push(next);
+      }
 
-      const added = seeds.filter(s => !cachedIds.has(s.id));
-      const final = merged.concat(added);
+      const reconciledIds = new Set(reconciled.map(s => s.id));
+      for (const s of seeds) {
+        if (!reconciledIds.has(s.id)) { reconciled.push(s); added += 1; }
+      }
 
-      if (added.length === 0 && updated === 0) return cachedList;
-
-      saveJson(LS_KEYS.streams, { version: 1, streams: final });
-      if (added.length > 0) console.log('[wwob] merged', added.length, 'new seed(s):', added.map(s => s.id));
-      if (updated > 0) console.log('[wwob] refreshed', updated, 'seed entry/entries from streams.json');
-      return final;
+      saveJson(LS_KEYS.streams, { version: 1, streams: reconciled });
+      saveJson(LS_KEYS.seedIds, seeds.map(s => s.id));
+      if (added) console.log('[wwob] added', added, 'new seed(s)');
+      if (updated) console.log('[wwob] updated', updated, 'seed(s) from streams.json');
+      if (removed) console.log('[wwob] removed', removed, 'discontinued seed(s)');
+      return reconciled;
     }
 
     // ---- Event delegation -----------------------------------------------

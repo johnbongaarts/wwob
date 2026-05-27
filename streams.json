@@ -131,37 +131,20 @@
       "activeMonths": [12, 1, 2, 3, 4, 5]
     },
     {
-      "id": "panama-fruit-feeder-explore",
-      "name": "Panama Fruit Feeder (Explore)",
-      "description": "Alternate stream of the Canopy Lodge fruit feeder via Explore.org.",
-      "platform": "iframe",
-      "url": "https://explore.org/livecams/currently-live/panama-fruit-feeder",
-      "source": "Explore.org"
-    },
-    {
       "id": "audubon-osprey-hog-island",
       "name": "Hog Island Ospreys",
       "description": "Maine osprey nest on Audubon's Hog Island — chick rearing and fishing dives.",
-      "platform": "iframe",
-      "url": "https://explore.org/livecams/ospreys/osprey-nest",
+      "platform": "youtube",
+      "videoId": "O6Ir_sMsTtc",
       "source": "Audubon + Explore.org",
       "activeMonths": [4, 5, 6, 7, 8, 9]
-    },
-    {
-      "id": "audubon-puffin-loafing-ledge",
-      "name": "Atlantic Puffins (Seal Island)",
-      "description": "Seal Island, Maine — Atlantic puffins on the 'loafing ledge' where the colony gathers.",
-      "platform": "iframe",
-      "url": "https://explore.org/livecams/puffins/puffin-loafing-ledge",
-      "source": "Audubon Seabird Institute + Explore.org",
-      "activeMonths": [5, 6, 7, 8]
     },
     {
       "id": "decorah-eagles",
       "name": "Decorah Eagles",
       "description": "Iconic bald eagle nest near the Decorah fish hatchery, Iowa.",
-      "platform": "iframe",
-      "url": "https://explore.org/livecams/raptor-resource-project/decorah-eagles",
+      "platform": "youtube",
+      "videoId": "IVmL3diwJuw",
       "source": "Raptor Resource Project + Explore.org",
       "activeMonths": [12, 1, 2, 3, 4, 5, 6]
     },
@@ -169,18 +152,18 @@
       "id": "decorah-north-eagles",
       "name": "Decorah North Eagles",
       "description": "Decorah North nest, also in Iowa — second long-running Raptor Resource Project eagle cam.",
-      "platform": "iframe",
-      "url": "https://explore.org/livecams/raptor-resource-project/decorah-eagles-north-nest",
+      "platform": "youtube",
+      "videoId": "GGIE1E-kaMQ",
       "source": "Raptor Resource Project + Explore.org",
       "activeMonths": [12, 1, 2, 3, 4, 5, 6]
     },
     {
       "id": "great-horned-owl-montana",
       "name": "Great Horned Owl (Montana)",
-      "description": "Wild Great Horned Owl nest in Montana via Explore.org's nature network.",
-      "platform": "iframe",
-      "url": "https://explore.org/livecams/birds/great-horned-owl-cam",
-      "source": "Explore.org",
+      "description": "Wild Great Horned Owl nest in Montana via the Owl Research Institute.",
+      "platform": "youtube",
+      "videoId": "oSKMHVbMPUQ",
+      "source": "Owl Research Institute + Explore.org",
       "activeMonths": [2, 3, 4, 5, 6]
     },
     {
@@ -209,15 +192,6 @@
       "videoId": "O6lsXAjVjQw",
       "source": "Scottish Wildlife Trust",
       "activeMonths": [3, 4, 5, 6, 7, 8]
-    },
-    {
-      "id": "estonia-white-tailed-eagle",
-      "name": "Estonian White-tailed Eagle",
-      "description": "Matsalu National Park, Estonia — Eagle Club's long-running merikotkas nest, active every year since 1996.",
-      "platform": "youtube",
-      "videoId": "9r0luregAMY",
-      "source": "Kotkaklubi (Eagle Club Estonia)",
-      "activeMonths": [2, 3, 4, 5, 6, 7, 8]
     },
     {
       "id": "estonia-golden-eagle",
@@ -262,14 +236,6 @@
       "source": "Tembe Elephant Park"
     },
     {
-      "id": "wild-africa-live-tau",
-      "name": "Wild Africa Live (Tau Waterhole)",
-      "description": "Madikwe Game Reserve, South Africa — 24/7 Africam waterhole stream; over 300 bird species including the Tau vulture restaurant.",
-      "platform": "youtube",
-      "videoId": "ZwxMY_3XZ_A",
-      "source": "Africam"
-    },
-    {
       "id": "fotherdale-barn-owls",
       "name": "Fotherdale Barn Owls (Robert E Fuller)",
       "description": "Yorkshire Wolds, UK — multi-cam view of wild barn owls, kestrels, stoats and tawny owls at wildlife artist Robert E Fuller's reserve.",
@@ -292,6 +258,82 @@
       "platform": "youtube",
       "videoId": "c3KfiiBTIvA",
       "source": "Sachatamia Lodge"
+    },
+    {
+      "id": "estonia-lesser-spotted-eagle",
+      "name": "Estonian Lesser Spotted Eagle",
+      "description": "Estonia — Kotkaklubi's väike-konnakotkas nest, one of the most-studied lesser spotted eagle nests in Europe.",
+      "platform": "youtube",
+      "videoId": "djOFxXiaXLU",
+      "source": "Kotkaklubi (Eagle Club Estonia)",
+      "activeMonths": [4, 5, 6, 7, 8]
+    },
+    {
+      "id": "estonia-black-stork-2",
+      "name": "Estonian Black Stork (Nest 2)",
+      "description": "Estonia — must-toonekurg nest, one of three Kotkaklubi black stork cams. Secretive forest specialists rare in Western Europe.",
+      "platform": "youtube",
+      "videoId": "QbzZTM32_4I",
+      "source": "Kotkaklubi (Eagle Club Estonia)",
+      "activeMonths": [4, 5, 6, 7, 8]
+    },
+    {
+      "id": "estonia-black-stork-3",
+      "name": "Estonian Black Stork (Nest 3)",
+      "description": "Estonia — second Kotkaklubi black stork nest, deep in boreal forest.",
+      "platform": "youtube",
+      "videoId": "Cf7hHiF25lw",
+      "source": "Kotkaklubi (Eagle Club Estonia)",
+      "activeMonths": [4, 5, 6, 7, 8]
+    },
+    {
+      "id": "estonia-black-stork-4",
+      "name": "Estonian Black Stork (Nest 4)",
+      "description": "Estonia — Kotkaklubi's newest black stork nest cam, added for the 2026 season.",
+      "platform": "youtube",
+      "videoId": "ZhAOC_798eE",
+      "source": "Kotkaklubi (Eagle Club Estonia)",
+      "activeMonths": [4, 5, 6, 7, 8]
+    },
+    {
+      "id": "africam-moela",
+      "name": "Moela Safari Lodge (Botswana)",
+      "description": "Boteti River, Botswana — Africam waterhole stream with zebra migration, raptors, hornbills, and waders.",
+      "platform": "youtube",
+      "videoId": "54Y7xlLrkuo",
+      "source": "Africam"
+    },
+    {
+      "id": "africam-safarihoek",
+      "name": "Safarihoek (Namibia)",
+      "description": "Etosha-adjacent waterhole, Namibia — Africam stream featuring vultures, kori bustards, sandgrouse and game.",
+      "platform": "youtube",
+      "videoId": "qwvk5hbEJnY",
+      "source": "Africam"
+    },
+    {
+      "id": "africam-meno-a-kwena",
+      "name": "Meno a Kwena (Botswana)",
+      "description": "Boteti River bank, Botswana — Africam dry-season zebra migration cam; herons, ibises and fish eagles in the channel.",
+      "platform": "youtube",
+      "videoId": "RZFMYVNhd4k",
+      "source": "Africam"
+    },
+    {
+      "id": "africam-olifants",
+      "name": "Olifants River (Kruger)",
+      "description": "Greater Kruger National Park, South Africa — Africam riverside cam with hammerkops, kingfishers, fish eagles and storks.",
+      "platform": "youtube",
+      "videoId": "NapztoCaKFY",
+      "source": "Africam"
+    },
+    {
+      "id": "africam-the-hide",
+      "name": "The Hide (Hwange, Zimbabwe)",
+      "description": "Hwange National Park, Zimbabwe — Africam waterhole at The Hide camp; vultures, eagles, hornbills and sandgrouse at the floodlit pan.",
+      "platform": "youtube",
+      "videoId": "nXI-kWu6BLo",
+      "source": "Africam"
     }
   ]
 }
