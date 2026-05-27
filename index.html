@@ -870,22 +870,52 @@
         return seeds;
       }
 
-      // Subsequent loads: try to merge any newly-shipped seed entries whose
-      // id isn't already in the cache. Preserves user-added streams and any
-      // user reordering; new seeds get appended at the end. If the fetch
-      // fails (offline / 404), just use the cached list.
+      // Subsequent loads: reconcile the cached list with the latest seeds.
+      //   - User-added streams (id not in seeds): preserved as-is.
+      //   - Seeds new since last load (id not in cache): appended.
+      //   - Seeds whose fields shifted (e.g. rotated videoId): the cached
+      //     entry's seed-managed fields are refreshed in place.
+      // If the seed fetch fails, fall back to the cache untouched.
       let seeds;
       try { seeds = await fetchSeedStreams(); }
       catch (e) { console.warn('[wwob] seed fetch failed, using cache only', e); return cachedList; }
 
-      const haveIds = new Set(cachedList.map(s => s.id));
-      const added = seeds.filter(s => !haveIds.has(s.id));
-      if (added.length === 0) return cachedList;
+      const seedById = new Map(seeds.map(s => [s.id, s]));
+      const cachedIds = new Set(cachedList.map(s => s.id));
 
-      const merged = cachedList.concat(added);
-      saveJson(LS_KEYS.streams, { version: 1, streams: merged });
-      console.log('[wwob] merged', added.length, 'new seed stream(s):', added.map(s => s.id));
-      return merged;
+      // Fields that come from streams.json. Anything else on a cached
+      // entry (transient runtime data, future user customizations) is left
+      // alone.
+      const SEED_FIELDS = ['name', 'description', 'platform', 'videoId', 'url', 'source', 'activeMonths'];
+
+      let updated = 0;
+      const merged = cachedList.map(c => {
+        const seed = seedById.get(c.id);
+        if (!seed) return c; // user-added or no longer in seeds
+        const next = { ...c };
+        let changed = false;
+        for (const f of SEED_FIELDS) {
+          // Treat missing on seed side as "remove this field".
+          if (seed[f] === undefined) {
+            if (next[f] !== undefined) { delete next[f]; changed = true; }
+          } else if (JSON.stringify(next[f]) !== JSON.stringify(seed[f])) {
+            next[f] = seed[f];
+            changed = true;
+          }
+        }
+        if (changed) updated += 1;
+        return next;
+      });
+
+      const added = seeds.filter(s => !cachedIds.has(s.id));
+      const final = merged.concat(added);
+
+      if (added.length === 0 && updated === 0) return cachedList;
+
+      saveJson(LS_KEYS.streams, { version: 1, streams: final });
+      if (added.length > 0) console.log('[wwob] merged', added.length, 'new seed(s):', added.map(s => s.id));
+      if (updated > 0) console.log('[wwob] refreshed', updated, 'seed entry/entries from streams.json');
+      return final;
     }
 
     // ---- Event delegation -----------------------------------------------
