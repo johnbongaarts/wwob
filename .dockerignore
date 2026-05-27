@@ -1,0 +1,7 @@
+.git
+.gitignore
+.DS_Store
+README.md
+birdcam-spec.md
+config.local.js
+config.local.example.js

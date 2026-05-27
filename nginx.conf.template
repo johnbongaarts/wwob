@@ -1,0 +1,19 @@
+server {
+    listen       ${PORT};
+    server_name  _;
+    root         /usr/share/nginx/html;
+    index        index.html;
+
+    # Make sure seed updates and key rotations are picked up on the next
+    # page load instead of being served from a stale browser cache.
+    location = /streams.json {
+        add_header Cache-Control "no-cache";
+    }
+    location = /config.local.js {
+        add_header Cache-Control "no-cache";
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
