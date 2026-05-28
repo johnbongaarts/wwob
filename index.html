@@ -29,7 +29,19 @@
       overscroll-behavior: none;
     }
     #titlebar {
-      padding: 22px 24px 18px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 200; /* above #player (z:100) so the title overlays playback */
+      padding: 18px 24px 16px;
+      background: linear-gradient(180deg,
+        rgba(10, 13, 16, 0.78) 0%,
+        rgba(10, 13, 16, 0.55) 70%,
+        rgba(10, 13, 16, 0.0) 100%);
+      backdrop-filter: blur(10px) saturate(160%);
+      -webkit-backdrop-filter: blur(10px) saturate(160%);
+      pointer-events: none; /* let taps fall through to dashboard/tap-catcher */
     }
     #titlebar h1 {
       margin: 0;
@@ -67,7 +79,7 @@
       #titlebar h1 { animation: none; }
     }
     main {
-      padding: 8px 16px 140px;
+      padding: 84px 16px 140px; /* top reserves space for the fixed titlebar */
     }
     .status {
       color: var(--fg-dim);
