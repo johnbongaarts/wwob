@@ -30,19 +30,23 @@
     }
     #titlebar {
       position: fixed;
-      top: 0;
+      bottom: 0;
       left: 0;
-      right: 0;
       z-index: 200; /* above #player (z:100) so the title overlays playback */
-      padding: 18px 24px 16px;
-      background: linear-gradient(180deg,
-        rgba(10, 13, 16, 0.78) 0%,
-        rgba(10, 13, 16, 0.55) 70%,
+      padding: 70px 32px 22px;
+      max-width: 70vw;
+      /* Solid at the bottom (behind the text) fading up to transparent —
+         mirrors the original top-bar look so streams that put their own
+         metadata up top stay unobstructed. */
+      background: linear-gradient(0deg,
+        rgba(10, 13, 16, 0.82) 0%,
+        rgba(10, 13, 16, 0.55) 55%,
         rgba(10, 13, 16, 0.0) 100%);
       backdrop-filter: blur(10px) saturate(160%);
       -webkit-backdrop-filter: blur(10px) saturate(160%);
-      pointer-events: none; /* let taps fall through to dashboard/tap-catcher */
+      pointer-events: none;
     }
+    #titlebar h1 { white-space: nowrap; }
     #titlebar h1 {
       margin: 0;
       font-family: "Hoefler Text", "Iowan Old Style", "Palatino", "Georgia", serif;
@@ -79,7 +83,7 @@
       #titlebar h1 { animation: none; }
     }
     main {
-      padding: 84px 16px 140px; /* top reserves space for the fixed titlebar */
+      padding: 16px 16px 140px; /* bottom reserves space for the title + dock */
     }
     .status {
       color: var(--fg-dim);
