@@ -43,7 +43,14 @@
       -webkit-backdrop-filter: blur(10px) saturate(160%);
       pointer-events: none;
     }
-    #titlebar h1 { white-space: nowrap; }
+    #titlebar h1 {
+      white-space: nowrap;
+      pointer-events: auto;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    body.playing #titlebar { display: none; }
     #titlebar h1 {
       margin: 0;
       font-family: "Hoefler Text", "Iowan Old Style", "Palatino", "Georgia", serif;
@@ -321,10 +328,23 @@
       gap: 10px;
       margin-top: 6px;
     }
+    dialog.modal .options.three-col { grid-template-columns: repeat(3, 1fr); }
     dialog.modal .options button {
       padding: 16px 12px;
       font-size: 15px;
       min-width: 0;
+    }
+    dialog.modal .options button.selected {
+      background: var(--accent-live);
+      color: #062512;
+      border-color: var(--accent-live);
+      font-weight: 600;
+    }
+    dialog.modal .hint {
+      margin: 14px 0 0;
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--fg-dim);
     }
   </style>
 </head>
@@ -338,6 +358,24 @@
     <iframe allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
     <div class="tap-catcher" id="tapCatcher" aria-label="Exit player"></div>
   </section>
+  <dialog id="prefsModal" class="modal">
+    <div class="modal-body">
+      <h2>Settings</h2>
+      <label>Max video quality</label>
+      <div class="options three-col" id="qualityOptions">
+        <button type="button" data-quality="auto">Auto</button>
+        <button type="button" data-quality="hd1080">1080p</button>
+        <button type="button" data-quality="hd720">720p</button>
+        <button type="button" data-quality="large">480p</button>
+        <button type="button" data-quality="medium">360p</button>
+      </div>
+      <p class="hint">YouTube treats this as a hint; live streams may
+        override it. For a hard cap, use router QoS instead.</p>
+      <div class="actions">
+        <button type="button" id="prefsClose">Done</button>
+      </div>
+    </div>
+  </dialog>
   <dialog id="shuffleModal" class="modal">
     <div class="modal-body">
       <h2>Shuffle interval</h2>
@@ -388,12 +426,16 @@
       streams: 'wwob.streams.v1',
       liveness: 'wwob.liveness.v1',
       seedIds: 'wwob.seedIds.v1',
+      prefs: 'wwob.prefs.v1',
     };
+
+    const DEFAULT_PREFS = { maxQuality: 'auto' };
 
     // ---- State -----------------------------------------------------------
     const state = {
       streams: [],
       liveness: {},
+      prefs: { ...DEFAULT_PREFS },
       view: 'dashboard',
       shuffle: { active: false, intervalMs: 0, timerId: null, lastId: null },
     };
@@ -545,6 +587,60 @@
       '<polyline points="30,8 34,12 30,16"/>' +
       '<polyline points="30,24 34,28 30,32"/>';
 
+    // ---- Preferences -----------------------------------------------------
+    function loadPrefs() {
+      const saved = loadJson(LS_KEYS.prefs);
+      return { ...DEFAULT_PREFS, ...(saved || {}) };
+    }
+
+    function savePrefs() {
+      saveJson(LS_KEYS.prefs, state.prefs);
+    }
+
+    function refreshQualityButtons() {
+      document.querySelectorAll('#qualityOptions button').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.quality === state.prefs.maxQuality);
+      });
+    }
+
+    function openPrefsModal() {
+      refreshQualityButtons();
+      const dlg = document.getElementById('prefsModal');
+      if (typeof dlg.showModal === 'function') dlg.showModal();
+      else dlg.setAttribute('open', '');
+    }
+
+    function closePrefsModal() {
+      const dlg = document.getElementById('prefsModal');
+      if (typeof dlg.close === 'function') dlg.close();
+      else dlg.removeAttribute('open');
+    }
+
+    function setMaxQuality(value) {
+      state.prefs.maxQuality = value;
+      savePrefs();
+      refreshQualityButtons();
+    }
+
+    // Long-press helper. Fires `cb` if a pointer stays down on `el` for
+    // `ms` milliseconds. Unified for mouse + touch via pointer events.
+    function attachLongPress(el, cb, ms = 800) {
+      let timer = null;
+      const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+      el.addEventListener('pointerdown', (e) => {
+        // Only respond to primary button / single touch.
+        if (e.button !== undefined && e.button !== 0) return;
+        cancel();
+        timer = setTimeout(() => { timer = null; cb(); }, ms);
+      });
+      el.addEventListener('pointerup', cancel);
+      el.addEventListener('pointerleave', cancel);
+      el.addEventListener('pointercancel', cancel);
+      // Suppress the iOS/Android long-press context menu that would
+      // otherwise hijack the gesture.
+      el.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+
     // ---- URL parsing -----------------------------------------------------
     function parseStreamUrl(raw) {
       const trimmed = (raw || '').trim();
@@ -638,9 +734,12 @@
         // enablejsapi=1 + origin let us postMessage play/mute commands after
         // the iframe loads, which is the only reliable autoplay path on
         // current YouTube embeds.
-        return 'https://www.youtube.com/embed/' + stream.videoId +
+        let url = 'https://www.youtube.com/embed/' + stream.videoId +
           '?autoplay=1&mute=1&controls=0&rel=0&playsinline=1' +
           '&enablejsapi=1&origin=' + encodeURIComponent(location.origin);
+        const q = state.prefs.maxQuality;
+        if (q && q !== 'auto') url += '&vq=' + encodeURIComponent(q);
+        return url;
       }
       if (stream.platform === 'twitch') {
         return 'https://player.twitch.tv/?channel=' + encodeURIComponent(stream.videoId) +
@@ -650,10 +749,10 @@
       return stream.url;
     }
 
-    function postYouTubeCommand(frame, func) {
+    function postYouTubeCommand(frame, func, args = []) {
       try {
         frame.contentWindow.postMessage(
-          JSON.stringify({ event: 'command', func, args: [] }),
+          JSON.stringify({ event: 'command', func, args }),
           'https://www.youtube.com'
         );
       } catch (e) {
@@ -667,17 +766,22 @@
       // Unhide before setting src — some browsers won't start media on an
       // iframe whose ancestor is display:none at load time.
       player.hidden = false;
+      document.body.classList.add('playing');
       state.view = 'player';
       frame.src = embedUrl(stream);
 
       if (stream.platform === 'youtube') {
         // Force-start playback after the iframe finishes loading. Sending
-        // mute first satisfies the autoplay-with-sound restriction.
+        // mute first satisfies the autoplay-with-sound restriction. Also
+        // re-applies the quality cap as a hint (the player may still
+        // override it on live streams — see Settings hint).
         frame.addEventListener('load', function onLoad() {
           frame.removeEventListener('load', onLoad);
           setTimeout(() => {
             postYouTubeCommand(frame, 'mute');
             postYouTubeCommand(frame, 'playVideo');
+            const q = state.prefs.maxQuality;
+            if (q && q !== 'auto') postYouTubeCommand(frame, 'setPlaybackQuality', [q]);
           }, 250);
         });
       }
@@ -688,6 +792,7 @@
       const frame = player.querySelector('iframe');
       frame.src = 'about:blank';
       player.hidden = true;
+      document.body.classList.remove('playing');
       state.view = 'dashboard';
       stopShuffle();
     }
@@ -990,6 +1095,15 @@
         if (startShuffle(minutes)) closeShuffleModal();
       });
       document.getElementById('shuffleCancel').addEventListener('click', closeShuffleModal);
+
+      // Hidden admin gesture: long-press the title to open Settings.
+      attachLongPress(document.querySelector('#titlebar h1'), openPrefsModal);
+      document.getElementById('qualityOptions').addEventListener('click', (ev) => {
+        const btn = ev.target.closest('button[data-quality]');
+        if (!btn) return;
+        setMaxQuality(btn.dataset.quality);
+      });
+      document.getElementById('prefsClose').addEventListener('click', closePrefsModal);
     }
 
     async function init() {
@@ -997,6 +1111,7 @@
       try {
         state.streams = await loadStreams();
         state.liveness = loadJson(LS_KEYS.liveness) || {};
+        state.prefs = loadPrefs();
         render();
         wireEvents();
         console.log('[wwob] streams loaded', state.streams.length);
