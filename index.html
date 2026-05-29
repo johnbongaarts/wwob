@@ -34,7 +34,7 @@
       left: 0;
       right: 0;
       z-index: 200; /* above #player (z:100) so the title overlays playback */
-      padding: 18px 24px 16px;
+      padding: 12px 18px 12px 24px;
       background: linear-gradient(180deg,
         rgba(10, 13, 16, 0.78) 0%,
         rgba(10, 13, 16, 0.55) 70%,
@@ -42,13 +42,55 @@
       backdrop-filter: blur(10px) saturate(160%);
       -webkit-backdrop-filter: blur(10px) saturate(160%);
       pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    #titleActions {
+      display: flex;
+      gap: 8px;
+      pointer-events: auto;
+      flex: 0 0 auto;
+    }
+    .title-btn {
+      width: 46px;
+      height: 46px;
+      padding: 0;
+      background: rgba(29, 34, 42, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: background 120ms ease, transform 80ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .title-btn:active { transform: scale(0.94); }
+    .title-btn:hover { background: rgba(48, 56, 67, 0.9); }
+    .title-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--fg);
+      stroke-width: 1.7;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    @media (max-width: 540px) {
+      .title-btn { width: 40px; height: 40px; }
+      .title-btn svg { width: 19px; height: 19px; }
+      #titlebar { padding: 10px 14px; }
     }
     #titlebar h1 {
       white-space: nowrap;
-      pointer-events: auto;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     body.playing #titlebar { display: none; }
     #titlebar h1 {
@@ -87,7 +129,7 @@
       #titlebar h1 { animation: none; }
     }
     main {
-      padding: 84px 16px 140px; /* top reserves space for the fixed titlebar */
+      padding: 80px 16px 32px; /* top clears the fixed titlebar */
     }
     .status {
       color: var(--fg-dim);
@@ -181,53 +223,6 @@
     }
     .tile.offline { opacity: 0.4; filter: grayscale(0.6); }
     .tile.upcoming .badge { color: var(--accent-upcoming); }
-    .tile.action {
-      background: var(--bg-elev);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 8px;
-      color: var(--fg);
-    }
-    .tile.action svg {
-      width: 30px;
-      height: 30px;
-      stroke: var(--fg);
-      stroke-width: 1.6;
-      fill: none;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .tile.action .label {
-      font-size: 11px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--fg-dim);
-    }
-    #actionDock {
-      position: fixed;
-      bottom: 18px;
-      right: 18px;
-      z-index: 50;
-      display: flex;
-      gap: 10px;
-    }
-    #actionDock .tile.action {
-      width: 108px;
-      height: 108px;
-      aspect-ratio: auto;
-      background: rgba(29, 34, 42, 0.92);
-      border-color: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-    }
-    @media (max-width: 540px) {
-      #actionDock { bottom: 12px; right: 12px; gap: 8px; }
-      #actionDock .tile.action { width: 92px; height: 92px; }
-      #actionDock .tile.action svg { width: 26px; height: 26px; }
-    }
     @media (max-width: 540px) {
       .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
       .tile .name { font-size: 13px; }
@@ -349,11 +344,35 @@
   </style>
 </head>
 <body>
-  <header id="titlebar"><h1>Wedge's World of Birds</h1></header>
+  <header id="titlebar">
+    <h1>Wedge's World of Birds</h1>
+    <div id="titleActions">
+      <button class="title-btn" data-action="add" title="Add stream" aria-label="Add stream">
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <line x1="20" y1="10" x2="20" y2="30"/>
+          <line x1="10" y1="20" x2="30" y2="20"/>
+        </svg>
+      </button>
+      <button class="title-btn" data-action="shuffle" title="Shuffle" aria-label="Shuffle">
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <path d="M6 12 H14 L26 28 H34"/>
+          <path d="M6 28 H14 L18 23"/>
+          <path d="M22 17 L26 12 H34"/>
+          <polyline points="30,8 34,12 30,16"/>
+          <polyline points="30,24 34,28 30,32"/>
+        </svg>
+      </button>
+      <button class="title-btn" data-action="settings" title="Settings" aria-label="Settings">
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <circle cx="20" cy="20" r="5"/>
+          <path d="M20 4 v5 M20 31 v5 M4 20 h5 M31 20 h5 M8 8 l3.5 3.5 M28.5 28.5 l3.5 3.5 M32 8 l-3.5 3.5 M8 32 l3.5 -3.5"/>
+        </svg>
+      </button>
+    </div>
+  </header>
   <main id="dashboard">
     <p class="status">Loading…</p>
   </main>
-  <div id="actionDock"></div>
   <section id="player" hidden>
     <iframe allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
     <div class="tap-catcher" id="tapCatcher" aria-label="Exit player"></div>
@@ -369,8 +388,8 @@
         <button type="button" data-quality="large">480p</button>
         <button type="button" data-quality="medium">360p</button>
       </div>
-      <p class="hint">YouTube treats this as a hint; live streams may
-        override it. For a hard cap, use router QoS instead.</p>
+      <p class="hint">YouTube treats this as a hint; live streams sometimes
+        override it. If a particular stream still buffers, try a lower setting.</p>
       <div class="actions">
         <button type="button" id="prefsClose">Done</button>
       </div>
@@ -569,24 +588,6 @@
       return el;
     }
 
-    function actionTileEl(action, label, svgPath) {
-      const el = document.createElement('div');
-      el.className = 'tile action';
-      el.dataset.action = action;
-      el.innerHTML =
-        '<svg viewBox="0 0 40 40" aria-hidden="true">' + svgPath + '</svg>' +
-        '<div class="label">' + label + '</div>';
-      return el;
-    }
-
-    const ICON_PLUS = '<line x1="20" y1="10" x2="20" y2="30"/><line x1="10" y1="20" x2="30" y2="20"/>';
-    const ICON_SHUFFLE =
-      '<path d="M6 12 H14 L26 28 H34"/>' +
-      '<path d="M6 28 H14 L18 23"/>' +
-      '<path d="M22 17 L26 12 H34"/>' +
-      '<polyline points="30,8 34,12 30,16"/>' +
-      '<polyline points="30,24 34,28 30,32"/>';
-
     // ---- Preferences -----------------------------------------------------
     function loadPrefs() {
       const saved = loadJson(LS_KEYS.prefs);
@@ -620,25 +621,6 @@
       state.prefs.maxQuality = value;
       savePrefs();
       refreshQualityButtons();
-    }
-
-    // Long-press helper. Fires `cb` if a pointer stays down on `el` for
-    // `ms` milliseconds. Unified for mouse + touch via pointer events.
-    function attachLongPress(el, cb, ms = 800) {
-      let timer = null;
-      const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
-      el.addEventListener('pointerdown', (e) => {
-        // Only respond to primary button / single touch.
-        if (e.button !== undefined && e.button !== 0) return;
-        cancel();
-        timer = setTimeout(() => { timer = null; cb(); }, ms);
-      });
-      el.addEventListener('pointerup', cancel);
-      el.addEventListener('pointerleave', cancel);
-      el.addEventListener('pointercancel', cancel);
-      // Suppress the iOS/Android long-press context menu that would
-      // otherwise hijack the gesture.
-      el.addEventListener('contextmenu', (e) => e.preventDefault());
     }
 
     // ---- URL parsing -----------------------------------------------------
@@ -856,16 +838,11 @@
 
     function render() {
       const dash = document.getElementById('dashboard');
-      const dock = document.getElementById('actionDock');
       const grid = document.createElement('div');
       grid.className = 'grid';
       const sorted = sortStreams(state.streams);
       for (const s of sorted) grid.appendChild(tileEl(s));
       dash.replaceChildren(grid);
-      dock.replaceChildren(
-        actionTileEl('add', 'Add', ICON_PLUS),
-        actionTileEl('shuffle', 'Shuffle', ICON_SHUFFLE),
-      );
     }
 
     // ---- Liveness detection ---------------------------------------------
@@ -1052,23 +1029,24 @@
     }
 
     function wireEvents() {
-      function handleTileClick(ev) {
+      // Stream tile taps -> open player.
+      document.getElementById('dashboard').addEventListener('click', (ev) => {
         const tile = ev.target.closest('.tile');
         if (!tile) return;
-        if (tile.dataset.action === 'add') {
-          openAddModal();
-          return;
-        }
-        if (tile.dataset.action === 'shuffle') {
-          openShuffleModal();
-          return;
-        }
         const id = tile.dataset.streamId;
         const stream = streamById(id);
         if (stream) openPlayer(stream);
-      }
-      document.getElementById('dashboard').addEventListener('click', handleTileClick);
-      document.getElementById('actionDock').addEventListener('click', handleTileClick);
+      });
+
+      // Title-bar action buttons.
+      document.getElementById('titleActions').addEventListener('click', (ev) => {
+        const btn = ev.target.closest('button[data-action]');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        if (action === 'add') openAddModal();
+        else if (action === 'shuffle') openShuffleModal();
+        else if (action === 'settings') openPrefsModal();
+      });
 
       document.getElementById('tapCatcher').addEventListener('click', closePlayer);
 
@@ -1096,8 +1074,6 @@
       });
       document.getElementById('shuffleCancel').addEventListener('click', closeShuffleModal);
 
-      // Hidden admin gesture: long-press the title to open Settings.
-      attachLongPress(document.querySelector('#titlebar h1'), openPrefsModal);
       document.getElementById('qualityOptions').addEventListener('click', (ev) => {
         const btn = ev.target.closest('button[data-quality]');
         if (!btn) return;
